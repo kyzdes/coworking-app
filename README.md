@@ -2,6 +2,34 @@
 
 iOS приложение для совместной работы по методу Pomodoro с возможностью создания виртуальных офисов, где пользователи могут видеть активность друзей в реальном времени.
 
+## 🚀 Quick Start
+
+### ⚠️ ВАЖНО: Открывайте Package.swift, не .xcodeproj!
+
+Этот проект использует современный Swift Package Manager. Вам НЕ нужен .xcodeproj файл!
+
+```bash
+# Способ 1: Двойной клик на Package.swift в Finder
+# Способ 2: Из терминала
+cd /path/to/coworking-app
+open Package.swift
+
+# Или используйте скрипт
+./Scripts/generate-xcode-project.sh
+```
+
+**Затем в Xcode:**
+1. ⏳ Дождитесь "Fetching dependencies..." (1-2 минуты)
+2. 🎯 Выберите схему **"App"** в верхнем меню
+3. 📱 Выберите симулятор или устройство
+4. ▶️ Нажмите **⌘R** для запуска
+
+**Получили ошибки "No such module"?** → [QUICKSTART.md](QUICKSTART.md)
+
+**Подробные инструкции** → [SETUP_INSTRUCTIONS.md](SETUP_INSTRUCTIONS.md)
+
+---
+
 ## Основные возможности
 
 ### MVP (Phase 1) ✅
