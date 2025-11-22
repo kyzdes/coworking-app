@@ -87,6 +87,7 @@ public struct TimerFeature {
     @Dependency(\.continuousClock) var clock
     @Dependency(\.networkService) var networkService
     @Dependency(\.webSocketManager) var webSocketManager
+    @Dependency(\.liveActivityManager) var liveActivityManager
 
     private enum CancelID { case timer }
 
@@ -100,8 +101,26 @@ public struct TimerFeature {
                 state.isPaused = false
                 state.timeRemaining = state.totalDuration
 
+                // Start Live Activity
+                let liveActivityEffect: Effect<Action> = .run {
+                    [phase = state.currentPhase,
+                     timeRemaining = state.timeRemaining,
+                     totalDuration = state.totalDuration,
+                     completedPomodoros = state.completedPomodorosToday] _ in
+                    if #available(iOS 16.1, *) {
+                        try? await liveActivityManager.startActivity(
+                            phase: phase.rawValue,
+                            timeRemaining: timeRemaining,
+                            totalDuration: totalDuration,
+                            completedPomodoros: completedPomodoros,
+                            officeName: nil
+                        )
+                    }
+                }
+
                 // Create session on backend
                 return .merge(
+                    liveActivityEffect,
                     .run { [phase = state.currentPhase, duration = state.totalDuration] send in
                         await send(.sessionCreated(
                             Result {
@@ -128,23 +147,62 @@ public struct TimerFeature {
 
             case .pauseTimer:
                 state.isPaused = true
-                return .cancel(id: CancelID.timer)
+
+                // Update Live Activity
+                let updateEffect: Effect<Action> = .run { [timeRemaining = state.timeRemaining] _ in
+                    if #available(iOS 16.1, *) {
+                        try? await liveActivityManager.updateActivity(
+                            timeRemaining: timeRemaining,
+                            isRunning: false
+                        )
+                    }
+                }
+
+                return .merge(
+                    updateEffect,
+                    .cancel(id: CancelID.timer)
+                )
 
             case .resumeTimer:
                 state.isPaused = false
-                return .run { send in
-                    for await _ in clock.timer(interval: .seconds(1)) {
-                        await send(.timerTicked)
+
+                // Update Live Activity
+                let updateEffect: Effect<Action> = .run { [timeRemaining = state.timeRemaining] _ in
+                    if #available(iOS 16.1, *) {
+                        try? await liveActivityManager.updateActivity(
+                            timeRemaining: timeRemaining,
+                            isRunning: true
+                        )
                     }
                 }
-                .cancellable(id: CancelID.timer, cancelInFlight: true)
+
+                return .merge(
+                    updateEffect,
+                    .run { send in
+                        for await _ in clock.timer(interval: .seconds(1)) {
+                            await send(.timerTicked)
+                        }
+                    }
+                    .cancellable(id: CancelID.timer, cancelInFlight: true)
+                )
 
             case .stopTimer:
                 state.isRunning = false
                 state.isPaused = false
                 state.timeRemaining = state.totalDuration
                 state.currentSessionId = nil
-                return .cancel(id: CancelID.timer)
+
+                // End Live Activity
+                let endActivityEffect: Effect<Action> = .run { _ in
+                    if #available(iOS 16.1, *) {
+                        await liveActivityManager.endActivity()
+                    }
+                }
+
+                return .merge(
+                    endActivityEffect,
+                    .cancel(id: CancelID.timer)
+                )
 
             case .timerTicked:
                 guard state.timeRemaining > 0 else {
@@ -153,21 +211,34 @@ public struct TimerFeature {
 
                 state.timeRemaining -= 1
 
-                // Send WebSocket update every 10 seconds
-                if Int(state.timeRemaining) % 10 == 0, let sessionId = state.currentSessionId {
-                    return .run { [timeRemaining = state.timeRemaining] _ in
-                        try? await webSocketManager.send(
-                            .timerUpdate(
-                                TimerUpdateMessage(
-                                    sessionId: sessionId,
-                                    timeRemaining: timeRemaining
-                                )
-                            )
+                // Update Live Activity every second
+                let liveActivityEffect: Effect<Action> = .run { [timeRemaining = state.timeRemaining] _ in
+                    if #available(iOS 16.1, *) {
+                        try? await liveActivityManager.updateActivity(
+                            timeRemaining: timeRemaining,
+                            isRunning: true
                         )
                     }
                 }
 
-                return .none
+                // Send WebSocket update every 10 seconds
+                if Int(state.timeRemaining) % 10 == 0, let sessionId = state.currentSessionId {
+                    return .merge(
+                        liveActivityEffect,
+                        .run { [timeRemaining = state.timeRemaining] _ in
+                            try? await webSocketManager.send(
+                                .timerUpdate(
+                                    TimerUpdateMessage(
+                                        sessionId: sessionId,
+                                        timeRemaining: timeRemaining
+                                    )
+                                )
+                            )
+                        }
+                    )
+                }
+
+                return liveActivityEffect
 
             case .completeSession:
                 state.isRunning = false
@@ -183,8 +254,25 @@ public struct TimerFeature {
                 state.totalDuration = nextPhase.defaultDuration
                 state.timeRemaining = state.totalDuration
 
+                // Update Live Activity with new phase
+                let updatePhaseEffect: Effect<Action> = .run {
+                    [phase = state.currentPhase,
+                     timeRemaining = state.timeRemaining,
+                     totalDuration = state.totalDuration,
+                     completedPomodoros = state.completedPomodorosToday] _ in
+                    if #available(iOS 16.1, *) {
+                        try? await liveActivityManager.updatePhase(
+                            phase: phase.rawValue,
+                            timeRemaining: timeRemaining,
+                            totalDuration: totalDuration,
+                            completedPomodoros: completedPomodoros
+                        )
+                    }
+                }
+
                 // Send completion to backend
                 return .merge(
+                    updatePhaseEffect,
                     .run { [sessionId = state.currentSessionId] send in
                         if let sessionId = sessionId {
                             try? await webSocketManager.send(

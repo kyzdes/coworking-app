@@ -53,10 +53,14 @@ public struct AppView: View {
             )
 
         case .friends:
-            PlaceholderView(title: "Friends", icon: "person.2.fill")
+            FriendsView(
+                store: store.scope(state: \.friends, action: \.friends)
+            )
 
         case .stats:
-            PlaceholderView(title: "Statistics", icon: "chart.bar.fill")
+            StatisticsView(
+                store: store.scope(state: \.statistics, action: \.statistics)
+            )
 
         case .profile:
             PlaceholderView(title: "Profile", icon: "person.circle.fill")

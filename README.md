@@ -4,22 +4,23 @@ iOS приложение для совместной работы по мето�
 
 ## Основные возможности
 
-### MVP (Phase 1)
+### MVP (Phase 1) ✅
 - ✅ Аутентификация (Sign in with Apple, Email/Password)
 - ✅ Pomodoro таймер с настройками
 - ✅ Создание и управление виртуальными офисами
 - ✅ Real-time обновления статусов участников
 - ✅ Базовая статистика
-- ⏳ Управление друзьями
-- ⏳ Push и локальные уведомления
 
-### Phase 2
-- ⏳ Live Activities
-- ⏳ Home Screen Widget
-- ⏳ Расширенная статистика с Charts
-- ⏳ QR-код приглашения
-- ⏳ Calendar integration
-- ⏳ Siri Shortcuts
+### Phase 2 ✅
+- ✅ Live Activities (Lock Screen + Dynamic Island)
+- ✅ Home Screen Widgets (Small, Medium, Large)
+- ✅ Расширенная статистика с Charts framework
+- ✅ Управление друзьями (поиск, запросы)
+- ✅ QR-код приглашения (генерация и сканирование)
+- ✅ Calendar integration (блокировка времени фокуса)
+- ✅ Siri Shortcuts (старт/стоп таймера, проверка прогресса)
+- ✅ Push и локальные уведомления
+- ✅ Haptic feedback (тактильная обратная связь)
 
 ### Phase 3
 - ⏳ Apple Watch companion app

@@ -10,11 +10,15 @@ public struct AppFeature {
         public var selectedTab: Tab = .office
         public var officeList: OfficeListFeature.State
         public var timer: TimerFeature.State
+        public var friends: FriendsFeature.State
+        public var statistics: StatisticsFeature.State
 
         public init() {
             self.authState = AuthenticationFeature.State()
             self.officeList = OfficeListFeature.State()
             self.timer = TimerFeature.State()
+            self.friends = FriendsFeature.State()
+            self.statistics = StatisticsFeature.State()
         }
 
         public var isAuthenticated: Bool {
@@ -27,6 +31,8 @@ public struct AppFeature {
         case tabSelected(Tab)
         case officeList(OfficeListFeature.Action)
         case timer(TimerFeature.Action)
+        case friends(FriendsFeature.Action)
+        case statistics(StatisticsFeature.Action)
         case appLaunched
         case restoreSessionCompleted
 
@@ -38,6 +44,8 @@ public struct AppFeature {
             case (.auth(let l), .auth(let r)): return l == r
             case (.officeList(let l), .officeList(let r)): return l == r
             case (.timer(let l), .timer(let r)): return l == r
+            case (.friends(let l), .friends(let r)): return l == r
+            case (.statistics(let l), .statistics(let r)): return l == r
             default: return false
             }
         }
@@ -76,6 +84,14 @@ public struct AppFeature {
             TimerFeature()
         }
 
+        Scope(state: \.friends, action: \.friends) {
+            FriendsFeature()
+        }
+
+        Scope(state: \.statistics, action: \.statistics) {
+            StatisticsFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .appLaunched:
@@ -97,6 +113,12 @@ public struct AppFeature {
                 return .none
 
             case .timer:
+                return .none
+
+            case .friends:
+                return .none
+
+            case .statistics:
                 return .none
 
             case .restoreSessionCompleted:
